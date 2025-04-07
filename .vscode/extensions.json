@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "streetsidesoftware.code-spell-checker-portuguese-brazilian",
+    "ms-vscode.cpptools-extension-pack",
+    "streetsidesoftware.code-spell-checker",
+    "eamodio.gitlens",
+    "esbenp.prettier-vscode",
+    "redhat.vscode-xml"
+  ]
+}
