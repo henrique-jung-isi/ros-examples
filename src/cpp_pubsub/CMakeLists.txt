@@ -7,13 +7,36 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}_msgs
+        "msg/BoundedImage.msg"
+        DEPENDENCIES std_msgs
+)
+
+rosidl_get_typesupport_target(msgs_linker ${PROJECT_NAME}_msgs rosidl_typesupport_cpp)
 
 add_executable(talker src/publisher_member_function.cpp)
-ament_target_dependencies(talker rclcpp std_msgs)
-add_executable(listener src/subscriber_member_function.cpp)
-ament_target_dependencies(listener rclcpp std_msgs)
+ament_target_dependencies(talker rclcpp sensor_msgs cv_bridge)
+target_link_libraries(talker ${msgs_linker})
 
+add_executable(listener src/subscriber_member_function.cpp)
+ament_target_dependencies(listener rclcpp sensor_msgs cv_bridge)
+target_link_libraries(listener ${msgs_linker})
+
+
+target_include_directories(talker PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+target_include_directories(listener PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+# export CYCLONEDDS_URI="file:///home/jung/Documents/ros-examples/cyclonedds.xml"
 install(TARGETS
   talker
   listener

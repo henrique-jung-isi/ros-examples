@@ -12,33 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "rclcpp/rclcpp.hpp"
+#include <chrono>
+#include <cv_bridge/cv_bridge.h>
 #include <functional>
 #include <memory>
-
+#include <opencv2/opencv.hpp>
+#include <sensor_msgs/msg/image.hpp>
 #include <string>
-
-#include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
 
 using std::placeholders::_1;
 
+rclcpp::NodeOptions options;
 class MinimalSubscriber : public rclcpp::Node {
 public:
-  MinimalSubscriber() : Node("minimal_subscriber") {
-    _subscription = this->create_subscription<std_msgs::msg::String>(
-        "pubExemple",
-        10,
-        std::bind(&MinimalSubscriber::topic_callback, this, _1));
+  MinimalSubscriber() : Node("minimal_subscriber", options) {
+    _subscription = this->create_subscription<sensor_msgs::msg::Image>(
+        "pubExemple", 10, std::bind(&MinimalSubscriber::topic_callback, this, _1));
   }
 
 private:
-  void topic_callback(const std_msgs::msg::String &msg) const {
-    RCLCPP_INFO(this->get_logger(), "I heard: '%s'", msg.data.c_str());
+  void topic_callback(const sensor_msgs::msg::Image &msg) const {
+    rclcpp::Time stamp(msg.header.stamp, this->get_clock()->get_clock_type());
+    auto age = now() - stamp;
+    RCLCPP_INFO(this->get_logger(), "Image age: %.3f ms", age.seconds() * 1e3);
   }
-  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr _subscription;
+
+  rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr _subscription;
 };
 
 int main(int argc, char *argv[]) {
+  //   options.use_intra_process_comms(true);
   rclcpp::init(argc, argv);
   rclcpp::spin(std::make_shared<MinimalSubscriber>());
   rclcpp::shutdown();

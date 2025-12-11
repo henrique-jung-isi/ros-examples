@@ -12,41 +12,56 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "rclcpp/rclcpp.hpp"
 #include <chrono>
+#include <cv_bridge/cv_bridge.h>
 #include <functional>
 #include <memory>
+#include <opencv2/opencv.hpp>
+#include <sensor_msgs/msg/image.hpp>
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
+#define IMAGE "/home/jung/Documents/ros-examples/test_image.png"
+#define INTERVAL 200ms
 
 using namespace std::chrono_literals;
+
+rclcpp::NodeOptions options;
 
 /* This example creates a subclass of Node and uses std::bind() to register a
  * member function as a callback from the timer. */
 
 class MinimalPublisher : public rclcpp::Node {
 public:
-  MinimalPublisher() : Node("minimal_publisher"), _count(0) {
-    _publisher =
-        this->create_publisher<std_msgs::msg::String>("pubExemple", 10);
-    _timer = this->create_wall_timer(
-        500ms, std::bind(&MinimalPublisher::timer_callback, this));
+  MinimalPublisher() : Node("minimal_publisher", options), _count(0) {
+    _image = cv::imread(IMAGE);
+    _msg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", _image).toImageMsg();
+    _publisher = this->create_publisher<sensor_msgs::msg::Image>("pubExemple", 10);
+    _timer = this->create_wall_timer(INTERVAL, std::bind(&MinimalPublisher::timer_callback, this));
   }
 
 private:
   void timer_callback() {
-    auto message = std_msgs::msg::String();
-    message.data = "Hello, world! " + std::to_string(_count++);
-    RCLCPP_INFO(this->get_logger(), "Publishing: '%s'", message.data.c_str());
-    _publisher->publish(message);
+    _count++;
+    RCLCPP_INFO(this->get_logger(), "Publishing: '%ld'", _count);
+    // auto loaned = _publisher->borrow_loaned_message();
+    // auto &msg = loaned.get();
+    // msg.data = _msg->data;
+    // msg.encoding = _msg->encoding;
+    // msg.header = _msg->header;
+    // msg.height = _msg->height;
+    _msg->header.stamp = this->now();
+    _publisher->publish(*_msg);
   }
   rclcpp::TimerBase::SharedPtr _timer;
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr _publisher;
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr _publisher;
+  cv::Mat _image;
+  sensor_msgs::msg::Image::SharedPtr _msg;
   size_t _count;
 };
 
 int main(int argc, char *argv[]) {
+  //   options.use_intra_process_comms(true);
   rclcpp::init(argc, argv);
   rclcpp::spin(std::make_shared<MinimalPublisher>());
   rclcpp::shutdown();

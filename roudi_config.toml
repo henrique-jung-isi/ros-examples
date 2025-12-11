@@ -1,0 +1,7 @@
+[general]
+version = 1
+[[segment]]
+size = 2147483648 # 2 GB segment size
+[[segment.mempool]]
+size = 67108864   # 64 MB chunk size
+count = 100       # número de chunks
